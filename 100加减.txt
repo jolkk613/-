@@ -1,0 +1,368 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#pragma warning(disable : 4996)
+
+typedef struct {
+	int first;
+	int second;
+	int op;			// 1->+ 0->-
+	int ans;		// 自己的答案 
+	int ansOption;  // 答案的选项 
+	int realAns;	// 标准答案 
+	int realAnsOption; // 标准答案的选项 用于选择题 A->0, B->1, C->2, D->3 
+	int ansOptions[4]; // 记录下选择题的答案 0->A, 1->B, 2->C. 3->D
+}Topic;
+
+#define TOPIC_NUM 10
+
+Topic topics[TOPIC_NUM];
+
+// 随机决定操作符类型 + or - 
+int generate_op()
+{
+	int ret;
+
+	ret = rand() % 2;
+
+	return ret;
+}
+
+// 随机生成100以内的操作数 
+int generate_num()
+{
+	int ret;
+
+	ret = rand() % 101;
+	return ret;
+}
+
+// 生成题目 
+void generate_topics()
+{
+	for (int i = 0; i < TOPIC_NUM; i++) {
+		topics[i].op = generate_op();
+		topics[i].first = generate_num();
+		topics[i].second = generate_num();
+		// 如果是减法运算需特殊处理 
+		if (topics[i].op == 0) {
+			// 如果被减数小于减数 那么两个数互换 
+			if (topics[i].first < topics[i].second) {
+				int tmp = topics[i].first;
+				topics[i].first = topics[i].second;
+				topics[i].second = tmp;
+			}
+		}
+	}
+}
+
+// 计算题目的正确答案 
+void cal_topics()
+{
+	for (int i = 0; i < TOPIC_NUM; i++) {	// 针对每道题 
+		if (topics[i].op == 0) {		// 减法 
+			topics[i].realAns = topics[i].first - topics[i].second;
+		}
+		else {		// 加法 
+			topics[i].realAns = topics[i].first + topics[i].second;
+		}
+		topics[i].ansOption = -1;
+	}
+}
+
+void init()
+{
+	srand(time(NULL));	// 生成真随机数的准备函数 
+
+	generate_topics();
+
+	cal_topics();
+}
+
+// 输入题目 
+void show_topic(int idx)
+{
+	printf("%d ", topics[idx].first);
+	if (topics[idx].op == 0) {
+		printf("- ");
+	}
+	else {
+		printf("+ ");
+	}
+	printf("%d = ", topics[idx].second);
+}
+
+void show_choices(int idx)
+{
+	int option = rand() % 4;	// 决定正确答案在第几个选项中 
+	int wrong1 = rand() % 100 + 100;	// 100-200
+	int wrong2 = rand() % 50;			// 0-50
+	int wrong3 = rand() % 50 + 50;		// 50-100	
+
+	// 确保不是正确值 
+	while (wrong1 == topics[idx].realAns) {
+		wrong1 = rand() % 100 + 100;
+	}
+	while (wrong2 == topics[idx].realAns) {
+		wrong2 = rand() % 50;
+	}
+	while (wrong3 == topics[idx].realAns) {
+		wrong3 = rand() % 50 + 50;
+	}
+
+	switch (option) {
+	case 0: {
+		printf("A.%d ", topics[idx].realAns);
+		topics[idx].realAnsOption = 0;
+		printf("B.%d ", wrong1);
+		printf("C.%d ", wrong2);
+		printf("D.%d ", wrong3);
+		topics[idx].ansOptions[0] = topics[idx].realAns;
+		topics[idx].ansOptions[1] = wrong1;
+		topics[idx].ansOptions[2] = wrong2;
+		topics[idx].ansOptions[3] = wrong3;
+		break;
+	}
+	case 1: {
+		printf("A.%d ", wrong1);
+		printf("B.%d ", topics[idx].realAns);
+		topics[idx].realAnsOption = 1;
+		printf("C.%d ", wrong2);
+		printf("D.%d ", wrong3);
+		topics[idx].ansOptions[0] = wrong1;
+		topics[idx].ansOptions[1] = topics[idx].realAns;
+		topics[idx].ansOptions[2] = wrong2;
+		topics[idx].ansOptions[3] = wrong3;
+		break;
+	}
+	case 2: {
+		printf("A.%d ", wrong1);
+		printf("B.%d ", wrong2);
+		printf("C.%d ", topics[idx].realAns);
+		topics[idx].realAnsOption = 2;
+		printf("D.%d ", wrong3);
+		topics[idx].ansOptions[0] = wrong1;
+		topics[idx].ansOptions[1] = wrong2;
+		topics[idx].ansOptions[2] = topics[idx].realAns;
+		topics[idx].ansOptions[3] = wrong3;
+		break;
+	}
+	case 3: {
+		printf("A.%d ", wrong1);
+		printf("B.%d ", wrong2);
+		printf("C.%d ", wrong3);
+		printf("D.%d ", topics[idx].realAns);
+		topics[idx].realAnsOption = 3;
+		topics[idx].ansOptions[0] = wrong1;
+		topics[idx].ansOptions[1] = wrong2;
+		topics[idx].ansOptions[2] = wrong3;
+		topics[idx].ansOptions[3] = topics[idx].realAns;
+		break;
+	}
+	}
+}
+
+void show_client_tips()
+{
+	printf("-------------------------------------------------\n");
+	printf("|\t\t欢迎登陆用户界面\t\t|\n");
+	printf("|\t\t1.答题          \t\t|\n");
+	printf("|\t\t2.查阅          \t\t|\n");
+	printf("|\t\t3.错题          \t\t|\n");
+	printf("|\t\t4.线下          \t\t|\n");
+	printf("|\t\t0.退出          \t\t|\n");
+	printf("-------------------------------------------------\n");
+	printf("请输入命令：");
+}
+
+void show_client_answer_tips()
+{
+	printf("-------------------------------------------------\n");
+	printf("|\t\t欢迎进入用户答题界面\t\t|\n");
+	printf("|\t\t1.选择题            \t\t|\n");
+	printf("|\t\t2.填空题            \t\t|\n");
+	printf("|\t\t0.退出              \t\t|\n");
+	printf("-------------------------------------------------\n");
+	printf("请输入命令：");
+}
+
+void answer()
+{
+	int score = 0;
+
+	show_client_answer_tips();
+
+	int order;
+	scanf_s("%d", &order);
+
+	printf("答题开始！\n");
+	printf("-----------\n");
+	clock_t start = clock();
+
+	switch (order) {
+	case 1: {
+		for (int i = 0; i < TOPIC_NUM; i++) {	// 针对每道题目 
+			printf("第%d题：\n", i + 1);
+			show_topic(i);
+			printf("\n");
+			show_choices(i);
+			char c, d;		// 读取回车的特殊处理 别理会 
+			scanf_s("%c%c", &d,1, &c,1);
+
+			if (c == 'A') {
+				topics[i].ansOption = 0;
+				topics[i].ans = topics[i].ansOptions[0];
+			}
+			else if (c == 'B') {
+				topics[i].ansOption = 1;
+				topics[i].ans = topics[i].ansOptions[1];
+			}
+			else if (c == 'C') {
+				topics[i].ansOption = 2;
+				topics[i].ans = topics[i].ansOptions[2];
+			}
+			else if (c == 'D') {
+				topics[i].ansOption = 3;
+				topics[i].ans = topics[i].ansOptions[3];
+			}
+
+			if (topics[i].ansOption == topics[i].realAnsOption) {	// 记录得分情况 
+				score++;
+			}
+		}
+		break;
+	}
+	case 2: {
+		for (int i = 0; i < TOPIC_NUM; i++) {
+			printf("第%d题：\n", i + 1);
+			show_topic(i);
+			scanf_s("%d", &topics[i].ans);
+
+			if (topics[i].ans == topics[i].realAns) {
+				score++;
+			}
+		}
+		break;
+	}
+	default: {
+		system("pause");
+		return;
+	}
+	}
+
+	clock_t end = clock();
+	printf("-----------\n");
+	printf("答题结束！\n");
+	printf("总得分：%d\n", score);
+	printf("总时长：%.2f秒\n", (end - start) * 1.0 / CLOCKS_PER_SEC);
+}
+
+void check()
+{
+	for (int i = 0; i < TOPIC_NUM; i++) {
+		printf("%d ", topics[i].first);
+		if (topics[i].op == 0) {
+			printf("- ");
+		}
+		else {
+			printf("+ ");
+		}
+		printf("%d = %d, 你的答案：%d ", topics[i].second, topics[i].realAns, topics[i].ans);
+		if (topics[i].realAns == topics[i].ans) {	// 检查每道题目对不对 
+			printf("Yes\n");
+		}
+		else {
+			printf("No\n");
+		}
+	}
+}
+
+void errors()
+{
+	int errorNum = 0;
+
+	for (int i = 0; i < TOPIC_NUM; i++) {
+		if (topics[i].realAns != topics[i].ans) {
+			errorNum++;
+		}
+	}
+	if (errorNum == 0) {
+		printf("没有错题！\n");
+		return;
+	}
+
+	for (int i = 0; i < TOPIC_NUM; i++) {
+		if (topics[i].realAns != topics[i].ans) {	// 错题再做 
+			printf("第%d题：\n", i + 1);
+			show_topic(i);
+			scanf_s("%d", &topics[i].ans);
+		}
+	}
+	printf("-----------\n");
+	printf("答题结束！\n");
+}
+
+// 本地化存储标准答案 
+void offline()
+{
+	FILE* fp = fopen("topics.txt", "w");
+	char buf[256], op;
+
+	for (int i = 0; i < TOPIC_NUM; i++) {
+		if (topics[i].op == 0) {
+			op = '-';
+		}
+		else {
+			op = '+';
+		}
+		// sprintf c语言标准库函数 可以百度了解 
+		sprintf(buf, "%d %c %d = %d\n", topics[i].first, op, topics[i].second, topics[i].realAns);
+		fputs(buf, fp);
+	}
+
+	printf("本地化完成！\n");
+	fclose(fp);
+}
+
+int main()
+{
+	init();
+
+	int isOver = 0;
+	int order;
+
+	while (!isOver) {
+		system("cls");
+		show_client_tips();
+		scanf_s("%d", &order);
+
+		switch (order) {
+		case 1: {
+			answer();
+			system("pause");
+			break;
+		}
+		case 2: {
+			check();
+			system("pause");
+			break;
+		}
+		case 3: {
+			errors();
+			system("pause");
+			break;
+		}
+		case 4: {
+			offline();
+			system("pause");
+			break;
+		}
+		default: {
+			isOver = 1;
+			break;
+		}
+		}
+	}
+
+	return 0;
+}
